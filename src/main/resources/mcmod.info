@@ -1,0 +1,16 @@
+[
+{
+  "modid": "moreenchantments",
+  "name": "More Enchantments",
+  "description": "Adds some additional enchantments to your world",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Mazen"],
+  "credits": "The Forge and FML guys",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
