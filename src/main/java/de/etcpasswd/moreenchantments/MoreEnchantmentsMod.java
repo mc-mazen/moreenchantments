@@ -17,6 +17,9 @@ public class MoreEnchantmentsMod {
     @Mod.EventHandler()
     public void preInit(FMLPreInitializationEvent event) {
 
+        Registry.loadConfigFromFile(event.getSuggestedConfigurationFile());
+
+
         EnchantmentHandler.registerEnchantments();
         MinecraftForge.EVENT_BUS.register(new EnchantmentHandler());
         MinecraftForge.EVENT_BUS.register(proxy);

@@ -6,10 +6,13 @@ import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.init.Items;
 import net.minecraft.init.MobEffects;
 import net.minecraft.item.ItemArmor;
+import net.minecraft.item.ItemBook;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
+import net.minecraftforge.event.AnvilUpdateEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerDropsEvent;
@@ -19,18 +22,25 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import java.util.ListIterator;
+import java.util.Map;
 
 public class EnchantmentHandler {
 
     private static final int AIR_MAX = 300;
 
     public static void registerEnchantments() {
-        Registry.enchantments.put(EnchantmentFlight.NAME, new EnchantmentFlight());
-        Registry.enchantments.put(EnchantmentWaterBreathing.NAME, new EnchantmentWaterBreathing());
-        Registry.enchantments.put(EnchantmentStepAssist.NAME, new EnchantmentStepAssist());
-        Registry.enchantments.put(EnchantmentLavaSwim.NAME, new EnchantmentLavaSwim());
-        Registry.enchantments.put(EnchantmentNightVision.NAME, new EnchantmentNightVision());
-        Registry.enchantments.put(EnchantmentSoulbound.NAME, new EnchantmentSoulbound());
+        if (Registry.enableFlightEnchantment)
+            Registry.enchantments.put(EnchantmentFlight.NAME, new EnchantmentFlight());
+        if (Registry.enableWaterBreathing)
+            Registry.enchantments.put(EnchantmentWaterBreathing.NAME, new EnchantmentWaterBreathing());
+        if (Registry.enableStepAssistEnchantment)
+            Registry.enchantments.put(EnchantmentStepAssist.NAME, new EnchantmentStepAssist());
+        if (Registry.enableFireImmune)
+            Registry.enchantments.put(EnchantmenFireImmune.NAME, new EnchantmenFireImmune());
+        if (Registry.enableNightVisionEnchantment)
+            Registry.enchantments.put(EnchantmentNightVision.NAME, new EnchantmentNightVision());
+        if (Registry.enableSoulboundEnchantment)
+            Registry.enchantments.put(EnchantmentSoulbound.NAME, new EnchantmentSoulbound());
 
         for (Enchantment ench : Registry.enchantments.values()) {
             GameRegistry.register(ench);
@@ -44,10 +54,14 @@ public class EnchantmentHandler {
         }
 
         EntityPlayer player = (EntityPlayer) event.getEntityLiving();
-        handleFlight(player);
-        handleWaterBreathing(player);
-        handleStepAssist(player);
-        handleNightVision(player);
+        if (Registry.enableFlightEnchantment)
+            handleFlight(player);
+        if (Registry.enableWaterBreathing)
+            handleWaterBreathing(player);
+        if (Registry.enableStepAssistEnchantment)
+            handleStepAssist(player);
+        if (Registry.enableNightVisionEnchantment)
+            handleNightVision(player);
         player.sendPlayerAbilities();
     }
 
@@ -58,12 +72,13 @@ public class EnchantmentHandler {
         }
         EntityPlayer player = (EntityPlayer) event.getEntityLiving();
 
-        handleLavaSwim(player, event);
+        if (Registry.enableFireImmune)
+            handleFireImmune(player, event);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDropsEvent event) {
-        if (event.getEntityPlayer() == null || event.isCanceled()) {
+        if (event.getEntityPlayer() == null || event.isCanceled() || !Registry.enableSoulboundEnchantment) {
             return;
         }
         if (event.getEntityPlayer().getEntityWorld().getGameRules().getBoolean("keepInventory")) {
@@ -84,7 +99,7 @@ public class EnchantmentHandler {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onPlayerClone(PlayerEvent.Clone evt) {
-        if (!evt.isWasDeath() || evt.isCanceled()) {
+        if (!evt.isWasDeath() || evt.isCanceled() || !Registry.enableSoulboundEnchantment) {
             return;
         }
         if (evt.getOriginal() == null || evt.getEntityPlayer() == null) {
@@ -111,6 +126,26 @@ public class EnchantmentHandler {
         }
     }
 
+    @SubscribeEvent
+    public void onAnvilUpdate(AnvilUpdateEvent event) {
+        if (!Registry.allowEnchantmentStripping)
+            return;
+
+        if (event.getLeft().isEmpty() || event.getLeft().getEnchantmentTagList() == null) {
+            return;
+        }
+        if (!(event.getRight().getItem() instanceof ItemBook)) {
+            return;
+        }
+
+        ItemStack outputItem = new ItemStack(Items.ENCHANTED_BOOK);
+        Map enchantments = EnchantmentHelper.getEnchantments(event.getLeft());
+        EnchantmentHelper.setEnchantments(enchantments, outputItem);
+        event.setOutput(outputItem);
+        event.setCost(enchantments.size() * Registry.levelCostPerEnchantForStripping);
+
+    }
+
     private void handleNightVision(EntityPlayer player) {
         if (!hasEnchantment(EnchantmentNightVision.NAME, player)) {
             return;
@@ -124,8 +159,8 @@ public class EnchantmentHandler {
 
     }
 
-    private void handleLavaSwim(EntityPlayer player, LivingHurtEvent event) {
-        if (player.capabilities.isCreativeMode || !event.getSource().isFireDamage() || !hasEnchantment(EnchantmentLavaSwim.NAME, player)) {
+    private void handleFireImmune(EntityPlayer player, LivingHurtEvent event) {
+        if (player.capabilities.isCreativeMode || !event.getSource().isFireDamage() || !hasEnchantment(EnchantmenFireImmune.NAME, player)) {
             return;
         }
         event.setCanceled(true);
