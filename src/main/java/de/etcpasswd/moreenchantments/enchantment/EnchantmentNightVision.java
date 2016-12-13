@@ -10,7 +10,7 @@ public class EnchantmentNightVision extends Enchantment {
 
     public static final
     @Nonnull
-    String NAME = "nigihtvision";
+    String NAME = "nightvision";
 
     public EnchantmentNightVision() {
         super(Rarity.RARE, EnumEnchantmentType.ARMOR_HEAD, new EntityEquipmentSlot[]{EntityEquipmentSlot.HEAD});
