@@ -21,11 +21,11 @@ public class EnchantmentStepAssist extends Enchantment {
 
     @Override
     public int getMinEnchantability(int enchantmentLevel) {
-        return 10;
+        return 15;
     }
 
     @Override
     public int getMaxEnchantability(int enchantmentLevel) {
-        return 25;
+        return 60;
     }
 }

@@ -26,7 +26,7 @@ public class EnchantmentWaterBreathing extends Enchantment {
 
     @Override
     public int getMinEnchantability(int enchantmentLevel) {
-        return 25;
+        return 15;
     }
 
     @Override

@@ -20,7 +20,7 @@ public class EnchantmentSoulbound extends Enchantment {
 
     @Override
     public int getMinEnchantability(int enchantmentLevel) {
-        return 10;
+        return 15;
     }
 
     @Override
