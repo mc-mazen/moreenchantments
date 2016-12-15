@@ -5,6 +5,7 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.init.MobEffects;
@@ -22,12 +23,16 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 
+import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.Map;
 
 public class EnchantmentHandler {
 
     private static final int AIR_MAX = 300;
+
+    public static Map<String, Integer> curFlyingPlayers = new HashMap<String, Integer>();
+
 
     public static void registerEnchantments() {
         if (Registry.enableFlightEnchantment)
@@ -148,6 +153,22 @@ public class EnchantmentHandler {
 
     }
 
+    @SubscribeEvent
+    public void onPlayerLogin(net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent event) {
+        if(curFlyingPlayers.containsKey(event.player.getGameProfile().getName())) {
+            curFlyingPlayers.remove(event.player.getGameProfile().getName());
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerLogout(net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent event) {
+        if(curFlyingPlayers.containsKey(event.player.getGameProfile().getName())) {
+            curFlyingPlayers.remove(event.player.getGameProfile().getName());
+        }
+    }
+
+
+
     private void handleNightVision(EntityPlayer player) {
         if (!hasEnchantment(EnchantmentNightVision.NAME, player)) {
             return;
@@ -184,16 +205,21 @@ public class EnchantmentHandler {
     }
 
     private void handleFlight(EntityPlayer player) {
-        if (hasEnchantment(EnchantmentFlight.NAME, player) && !player.capabilities.allowFlying) {
+        if(!(player instanceof EntityPlayerMP)) {
+            return;
+        }
+        if (hasEnchantment(EnchantmentFlight.NAME, player) && !curFlyingPlayers.containsKey(player.getGameProfile().getName())) {
             player.capabilities.allowFlying = true;
             if (!player.onGround) {
                 player.capabilities.isFlying = true;
             }
-
-        } else if (!hasEnchantment(EnchantmentFlight.NAME, player) && player.capabilities.allowFlying) {
+            curFlyingPlayers.put(player.getGameProfile().getName(), 1);
+        } else if (!hasEnchantment(EnchantmentFlight.NAME, player) && curFlyingPlayers.containsKey(player.getGameProfile().getName())) {
             player.capabilities.allowFlying = false;
+            curFlyingPlayers.remove(player.getGameProfile().getName());
         }
     }
+
 
     private boolean hasEnchantment(String key, ItemStack item) {
         return EnchantmentHelper.getEnchantmentLevel(Registry.enchantments.get(key), item) > 0;
