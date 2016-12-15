@@ -13,13 +13,14 @@ import net.minecraft.item.ItemBook;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
 import net.minecraftforge.event.AnvilUpdateEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerDropsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
 
 import java.util.ListIterator;
 import java.util.Map;
@@ -48,20 +49,18 @@ public class EnchantmentHandler {
     }
 
     @SubscribeEvent
-    public void onLivingUpdateEvent(LivingEvent.LivingUpdateEvent event) {
-        if (event.getEntityLiving() == null || !(event.getEntityLiving() instanceof EntityPlayer) || event.isCanceled()) {
-            return;
-        }
+    public void onPlayerTick(TickEvent.PlayerTickEvent event) {
 
-        EntityPlayer player = (EntityPlayer) event.getEntityLiving();
-        if (Registry.enableFlightEnchantment)
-            handleFlight(player);
+        EntityPlayer player = event.player;
         if (Registry.enableWaterBreathing)
             handleWaterBreathing(player);
         if (Registry.enableStepAssistEnchantment)
             handleStepAssist(player);
         if (Registry.enableNightVisionEnchantment)
             handleNightVision(player);
+        if (Registry.enableFlightEnchantment && !player.isCreative() && event.side == Side.SERVER)
+            handleFlight(player);
+
         player.sendPlayerAbilities();
     }
 
@@ -76,6 +75,9 @@ public class EnchantmentHandler {
             handleFireImmune(player, event);
     }
 
+
+    // The next 2 methods have been ported based on EnderIO's implementation of the Soulbound enchantment
+    // https://github.com/SleepyTrousers/EnderIO
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDropsEvent event) {
         if (event.getEntityPlayer() == null || event.isCanceled() || !Registry.enableSoulboundEnchantment) {
@@ -182,9 +184,13 @@ public class EnchantmentHandler {
     }
 
     private void handleFlight(EntityPlayer player) {
-        if (hasEnchantment(EnchantmentFlight.NAME, player)) {
+        if (hasEnchantment(EnchantmentFlight.NAME, player) && !player.capabilities.allowFlying) {
             player.capabilities.allowFlying = true;
-        } else {
+            if (!player.onGround) {
+                player.capabilities.isFlying = true;
+            }
+
+        } else if (!hasEnchantment(EnchantmentFlight.NAME, player) && player.capabilities.allowFlying) {
             player.capabilities.allowFlying = false;
         }
     }
