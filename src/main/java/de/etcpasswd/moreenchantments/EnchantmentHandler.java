@@ -1,6 +1,8 @@
 package de.etcpasswd.moreenchantments;
 
 import de.etcpasswd.moreenchantments.enchantment.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.item.EntityItem;
@@ -22,6 +24,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.HashMap;
 import java.util.ListIterator;
@@ -55,18 +58,28 @@ public class EnchantmentHandler {
 
     @SubscribeEvent
     public void onPlayerTick(TickEvent.PlayerTickEvent event) {
-
         EntityPlayer player = event.player;
+        if (Registry.enableFlightEnchantment && !player.isCreative() && event.side == Side.SERVER)
+            handleFlight(player);
+    }
+
+    @SideOnly(Side.CLIENT)
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if(event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        EntityPlayerSP player = Minecraft.getMinecraft().player;
+        if(player == null) {
+            return;
+        }
+
         if (Registry.enableWaterBreathing)
             handleWaterBreathing(player);
         if (Registry.enableStepAssistEnchantment)
             handleStepAssist(player);
         if (Registry.enableNightVisionEnchantment)
             handleNightVision(player);
-        if (Registry.enableFlightEnchantment && !player.isCreative() && event.side == Side.SERVER)
-            handleFlight(player);
-
-        player.sendPlayerAbilities();
     }
 
     @SubscribeEvent
@@ -213,9 +226,11 @@ public class EnchantmentHandler {
             if (!player.onGround) {
                 player.capabilities.isFlying = true;
             }
+            player.sendPlayerAbilities();
             curFlyingPlayers.put(player.getGameProfile().getName(), 1);
         } else if (!hasEnchantment(EnchantmentFlight.NAME, player) && curFlyingPlayers.containsKey(player.getGameProfile().getName())) {
             player.capabilities.allowFlying = false;
+            player.sendPlayerAbilities();
             curFlyingPlayers.remove(player.getGameProfile().getName());
         }
     }
