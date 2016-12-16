@@ -61,6 +61,8 @@ public class EnchantmentHandler {
         EntityPlayer player = event.player;
         if (Registry.enableFlightEnchantment && !player.isCreative() && event.side == Side.SERVER)
             handleFlight(player);
+        if (Registry.enableWaterBreathing)
+            handleWaterBreathing(player);
     }
 
     @SideOnly(Side.CLIENT)
@@ -74,8 +76,6 @@ public class EnchantmentHandler {
             return;
         }
 
-        if (Registry.enableWaterBreathing)
-            handleWaterBreathing(player);
         if (Registry.enableStepAssistEnchantment)
             handleStepAssist(player);
         if (Registry.enableNightVisionEnchantment)
@@ -180,8 +180,6 @@ public class EnchantmentHandler {
         }
     }
 
-
-
     private void handleNightVision(EntityPlayer player) {
         if (!hasEnchantment(EnchantmentNightVision.NAME, player)) {
             return;
@@ -244,6 +242,8 @@ public class EnchantmentHandler {
         return EnchantmentHelper.getMaxEnchantmentLevel(Registry.enchantments.get(key), player) > 0;
     }
 
+
+    // see https://github.com/SleepyTrousers/EnderIO
     private boolean addToPlayerInventory(EntityPlayer entityPlayer, ItemStack item) {
         if (item.isEmpty() || entityPlayer == null) {
             return false;
