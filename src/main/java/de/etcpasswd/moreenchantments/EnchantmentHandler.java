@@ -14,6 +14,7 @@ import net.minecraft.init.MobEffects;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemBook;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraftforge.event.AnvilUpdateEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -40,16 +41,20 @@ public class EnchantmentHandler {
     public static void registerEnchantments() {
         if (Registry.enableFlightEnchantment)
             Registry.enchantments.put(EnchantmentFlight.NAME, new EnchantmentFlight());
-        if (Registry.enableWaterBreathing)
+        if (Registry.enableWaterBreathingEnchantment)
             Registry.enchantments.put(EnchantmentWaterBreathing.NAME, new EnchantmentWaterBreathing());
         if (Registry.enableStepAssistEnchantment)
             Registry.enchantments.put(EnchantmentStepAssist.NAME, new EnchantmentStepAssist());
-        if (Registry.enableFireImmune)
+        if (Registry.enableFireImmuneEnchantment)
             Registry.enchantments.put(EnchantmenFireImmune.NAME, new EnchantmenFireImmune());
         if (Registry.enableNightVisionEnchantment)
             Registry.enchantments.put(EnchantmentNightVision.NAME, new EnchantmentNightVision());
         if (Registry.enableSoulboundEnchantment)
             Registry.enchantments.put(EnchantmentSoulbound.NAME, new EnchantmentSoulbound());
+        if(Registry.enableAntiVenomEnchantment)
+            Registry.enchantments.put(EnchantmentAntiVenom.NAME, new EnchantmentAntiVenom());
+        if(Registry.enableAntiWitherEnchantment)
+            Registry.enchantments.put(EnchantmentAntiWither.NAME, new EnchantmentAntiWither());
 
         for (Enchantment ench : Registry.enchantments.values()) {
             GameRegistry.register(ench);
@@ -61,8 +66,12 @@ public class EnchantmentHandler {
         EntityPlayer player = event.player;
         if (Registry.enableFlightEnchantment && !player.isCreative() && event.side == Side.SERVER)
             handleFlight(player);
-        if (Registry.enableWaterBreathing)
+        if (Registry.enableWaterBreathingEnchantment)
             handleWaterBreathing(player);
+        if(Registry.enableAntiVenomEnchantment)
+            handleAntiPotionEffect(MobEffects.POISON, EnchantmentAntiVenom.NAME, player);
+        if(Registry.enableAntiWitherEnchantment)
+            handleAntiPotionEffect(MobEffects.WITHER, EnchantmentAntiWither.NAME, player);
     }
 
     @SideOnly(Side.CLIENT)
@@ -89,7 +98,7 @@ public class EnchantmentHandler {
         }
         EntityPlayer player = (EntityPlayer) event.getEntityLiving();
 
-        if (Registry.enableFireImmune)
+        if (Registry.enableFireImmuneEnchantment)
             handleFireImmune(player, event);
     }
 
@@ -178,6 +187,15 @@ public class EnchantmentHandler {
         if(curFlyingPlayers.containsKey(event.player.getGameProfile().getName())) {
             curFlyingPlayers.remove(event.player.getGameProfile().getName());
         }
+    }
+
+    private void handleAntiPotionEffect(Potion effect, String enchantment, EntityPlayer player) {
+        if(!hasEnchantment(enchantment, player)) {
+            return;
+        }
+        player.removePotionEffect(effect);
+
+
     }
 
     private void handleNightVision(EntityPlayer player) {
